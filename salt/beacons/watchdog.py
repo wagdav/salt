@@ -16,6 +16,7 @@ import salt.ext.six
 try:
     from watchdog.observers import Observer
     from watchdog.events import LoggingEventHandler
+    from watchdog.events import FileSystemEventHandler
     HAS_WATCHDOG = True
 except ImportError:
     HAS_WATCHDOG = False
@@ -24,6 +25,16 @@ __virtualname__ = 'watchdog'
 
 import logging
 log = logging.getLogger(__name__)
+
+class Handler(FileSystemEventHandler):
+    def __init__(self, queue):
+        super(FileSystemEventHandler, self).__init__()
+        self.queue = queue
+
+    def on_modified(self, event):
+        log.debug("on_modified event received: %s", event)
+        self.queue.append(event)
+
 
 def __virtual__():
     if HAS_WATCHDOG:
@@ -35,16 +46,16 @@ def _get_notifier(config):
     '''
     Check the context for the notifier and construct it if not present
     '''
-   
-    path = '/tmp/important_file'
+
+    path = '/tmp/mydir/important_file'
 
     if 'watchdog.observer' not in __context__:
         __context__['watchdog.queue'] = collections.deque()
-        event_handler = LoggingEventHandler()
+        event_handler = Handler(__context__['watchdog.queue'])
         observer = Observer()
         observer.schedule(event_handler, os.path.dirname(path), recursive=True)
         observer.start()
-        __context__['watchdog.observer'] = observer 
+        __context__['watchdog.observer'] = observer
     return __context__['watchdog.observer']
 
 def __validate__(config):
@@ -54,12 +65,27 @@ def __validate__(config):
     return True, 'Valid beacon configuration'
 
 
+def to_salt_event(event):
+    return {
+        'tag': 'watchdog',
+        'src_path': event.src_path,
+        'type': event.event_type,
+    }
+
 def beacon(config):
     '''
     '''
-
     _get_notifier(config)
-    return []
+
+    queue = __context__['watchdog.queue']
+    log.debug("The queue contains: %s", queue)
+
+    ret = []
+    while len(queue):
+        log.debug("will send %s", queue[0])
+        ret.append(to_salt_event(queue.popleft()))
+
+    return ret
 
 
 def close(config):
