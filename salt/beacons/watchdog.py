@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 '''
 watchdog beacon
+
+Watch files and translate the changes into salt events
+
+:depends:   - watchdog Python module >= 0.8.3
+
 '''
 # Import Python libs
 from __future__ import absolute_import
@@ -15,7 +20,6 @@ import salt.ext.six
 # Import third party libs
 try:
     from watchdog.observers import Observer
-    from watchdog.events import LoggingEventHandler
     from watchdog.events import FileSystemEventHandler
     HAS_WATCHDOG = True
 except ImportError:
@@ -25,6 +29,7 @@ __virtualname__ = 'watchdog'
 
 import logging
 log = logging.getLogger(__name__)
+
 
 class Handler(FileSystemEventHandler):
     def __init__(self, queue):
@@ -58,6 +63,7 @@ def _get_notifier(config):
         __context__['watchdog.observer'] = observer
     return __context__['watchdog.observer']
 
+
 def __validate__(config):
     '''
     Validate the beacon configuration
@@ -71,6 +77,7 @@ def to_salt_event(event):
         'src_path': event.src_path,
         'type': event.event_type,
     }
+
 
 def beacon(config):
     '''
