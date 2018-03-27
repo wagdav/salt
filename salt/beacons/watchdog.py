@@ -45,6 +45,14 @@ class Handler(FileSystemEventHandler):
         log.debug("on_modified_event received: %s", event)
         self._append_if_mask(event, 'modify')
 
+    def on_deleted(self, event):
+        log.debug("on_deleted_event received: %s", event)
+        self._append_if_mask(event, 'delete')
+
+    def on_moved(self, event):
+        log.debug("on_moved_event received: %s", event)
+        self._append_if_mask(event, 'move')
+
     def _append_if_mask(self, event, mask):
         if event.src_path in self.config.get('files', {}):
             if mask in self.config['files'][event.src_path].get('mask', []):

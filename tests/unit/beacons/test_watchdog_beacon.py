@@ -43,8 +43,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         ret = watchdog.validate(config)
         self.assertEqual(ret, (True, 'Valid beacon configuration'))
 
-        ret = watchdog.beacon(config)
-        self.assertEqual(ret, [])
+        self.assertEqual(watchdog.beacon(config), [])
 
         with salt.utils.files.fopen(path, 'w') as f:
             pass
@@ -64,8 +63,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         ret = watchdog.validate(config)
         self.assertEqual(ret, (True, 'Valid beacon configuration'))
 
-        ret = watchdog.beacon(config)
-        self.assertEqual(ret, [])
+        self.assertEqual(watchdog.beacon(config), [])
 
         with salt.utils.files.fopen(path, 'w') as f:
             f.write('some content')
@@ -76,3 +74,63 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'modified')
+
+    def test_file_deleted(self):
+        path = os.path.join(self.tmpdir, 'tmpfile')
+        with salt.utils.files.fopen(path, 'w') as f:
+            pass
+
+        config = [{'files': {path: {'mask': ['delete']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        self.assertEqual(watchdog.beacon(config), [])
+
+        os.remove(path)
+
+        time.sleep(1)  # oups
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0]['path'], path)
+        self.assertEqual(ret[0]['change'], 'deleted')
+
+    def test_file_moved(self):
+        path = os.path.join(self.tmpdir, 'tmpfile')
+        with salt.utils.files.fopen(path, 'w') as f:
+            pass
+
+        config = [{'files': {path: {'mask': ['move']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        self.assertEqual(watchdog.beacon(config), [])
+
+        os.rename(path, path + '_moved')
+
+        time.sleep(1)  # oups
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0]['path'], path)
+        self.assertEqual(ret[0]['change'], 'moved')
+
+    def DISABLED_test_file_create_in_directory(self):
+        config = [{'files': {self.tmpdir: {'mask': ['create', 'modify']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        self.assertEqual(watchdog.beacon(config), [])
+
+        path = os.path.join(self.tmpdir, 'tmpfile')
+        with salt.utils.files.fopen(path, 'w') as f:
+            pass
+
+        time.sleep(1)  # oups
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(len(ret), 2)
+        self.assertEqual(ret[0]['path'], path)
+        self.assertEqual(ret[0]['change'], 'created')
+        self.assertEqual(ret[1]['path'], self.tmpdir)
+        self.assertEqual(ret[1]['change'], 'modified')
