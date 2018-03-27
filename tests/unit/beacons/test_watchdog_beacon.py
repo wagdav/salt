@@ -77,7 +77,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
     def test_file_deleted(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
-        with salt.utils.files.fopen(path, 'w') as f:
+        with salt.utils.files.fopen(path, 'w'):
             pass
 
         config = [{'files': {path: {'mask': ['delete']}}}]
@@ -97,7 +97,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
     def test_file_moved(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
-        with salt.utils.files.fopen(path, 'w') as f:
+        with salt.utils.files.fopen(path, 'w'):
             pass
 
         config = [{'files': {path: {'mask': ['move']}}}]
