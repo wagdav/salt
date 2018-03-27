@@ -32,13 +32,24 @@ log = logging.getLogger(__name__)
 
 
 class Handler(FileSystemEventHandler):
-    def __init__(self, queue):
+    def __init__(self, config, queue):
         super(FileSystemEventHandler, self).__init__()
+        self.config = config
         self.queue = queue
 
     def on_created(self, event):
         log.debug("on_created_event received: %s", event)
-        self.queue.append(event)
+        self._append_if_mask(event, 'create')
+
+    def on_modified(self, event):
+        log.debug("on_modified_event received: %s", event)
+        self._append_if_mask(event, 'modify')
+
+    def _append_if_mask(self, event, mask):
+        if event.src_path in self.config.get('files', {}):
+            if mask in self.config['files'][event.src_path].get('mask', []):
+                self.queue.append(event)
+
 
 def __virtual__():
     if HAS_WATCHDOG:
@@ -53,10 +64,13 @@ def _get_notifier(config):
 
     if 'watchdog.observer' not in __context__:
         __context__['watchdog.queue'] = collections.deque()
-        event_handler = Handler(__context__['watchdog.queue'])
+        event_handler = Handler(config, __context__['watchdog.queue'])
         observer = Observer()
         for path in config.get('files', {}):
-            observer.schedule(event_handler, path)
+            if os.path.isdir(path):
+                observer.schedule(event_handler, path)
+            else:
+                observer.schedule(event_handler, os.path.dirname(path))
 
         observer.start()
         __context__['watchdog.observer'] = observer
@@ -80,7 +94,35 @@ def to_salt_event(event):
 
 def beacon(config):
     '''
+    Watch the configured files
+
+    Example Config
+
+    .. code-block:: yaml
+
+        beacons:
+          watchdog:
+            - files:
+                /path/to/file/or/dir:
+                  mask:
+                    - open
+                    - create
+                    - close_write
+                  recurse: True
+                  auto_add: True
+                  exclude:
+                    - /path/to/file/or/dir/exclude1
+                    - /path/to/file/or/dir/exclude2
+                    - /path/to/file/or/dir/regex[a-m]*$:
+                        regex: True
+            - coalesce: True
+
+    The mask list can contain the following events (the default mask is create,
+    delete, and modify):
+    * create            - File created in watched directory
+    * modify            - File modified
     '''
+
     _config = {}
     list(map(_config.update, config))
 

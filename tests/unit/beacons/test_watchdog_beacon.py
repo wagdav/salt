@@ -14,10 +14,6 @@ from salt.beacons import watchdog
 # Salt testing libs
 from tests.support.unit import skipIf, TestCase
 from tests.support.mixins import LoaderModuleMockMixin
-# Third-party libs
-
-import logging
-log = logging.getLogger(__name__)
 
 
 @skipIf(not watchdog.HAS_WATCHDOG, 'watchdog is not available')
@@ -41,14 +37,15 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(ret, [])
 
     def test_file_create(self):
-        config = [{'files': {self.tmpdir: {'mask': ['create']}}}]
+        path = os.path.join(self.tmpdir, 'tmpfile')
+
+        config = [{'files': {path: {'mask': ['create']}}}]
         ret = watchdog.validate(config)
         self.assertEqual(ret, (True, 'Valid beacon configuration'))
 
         ret = watchdog.beacon(config)
         self.assertEqual(ret, [])
 
-        path = os.path.join(self.tmpdir, 'tmpfile')
         with salt.utils.files.fopen(path, 'w') as f:
             pass
 
@@ -58,3 +55,24 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'created')
+
+
+    def test_file_modified(self):
+        path = os.path.join(self.tmpdir, 'tmpfile')
+
+        config = [{'files': {path: {'mask': ['modify']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(ret, [])
+
+        with salt.utils.files.fopen(path, 'w') as f:
+            f.write('some content')
+
+        time.sleep(1)  # oups
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0]['path'], path)
+        self.assertEqual(ret[0]['change'], 'modified')
