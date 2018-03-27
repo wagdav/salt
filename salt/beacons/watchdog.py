@@ -36,10 +36,9 @@ class Handler(FileSystemEventHandler):
         super(FileSystemEventHandler, self).__init__()
         self.queue = queue
 
-    def on_modified(self, event):
-        log.debug("on_modified event received: %s", event)
+    def on_created(self, event):
+        log.debug("on_created_event received: %s", event)
         self.queue.append(event)
-
 
 def __virtual__():
     if HAS_WATCHDOG:
@@ -52,21 +51,19 @@ def _get_notifier(config):
     Check the context for the notifier and construct it if not present
     '''
 
-    path = '/tmp/mydir/important_file'
-
     if 'watchdog.observer' not in __context__:
         __context__['watchdog.queue'] = collections.deque()
         event_handler = Handler(__context__['watchdog.queue'])
         observer = Observer()
         for path in config.get('files', {}):
-            observer.schedule(event_handler, os.path.dirname(path), recursive=True)
+            observer.schedule(event_handler, path)
 
         observer.start()
         __context__['watchdog.observer'] = observer
     return __context__['watchdog.observer']
 
 
-def __validate__(config):
+def validate(config):
     '''
     Validate the beacon configuration
     '''
@@ -76,8 +73,8 @@ def __validate__(config):
 def to_salt_event(event):
     return {
         'tag': 'watchdog',
-        'src_path': event.src_path,
-        'type': event.event_type,
+        'path': event.src_path,
+        'change': event.event_type,
     }
 
 
@@ -85,7 +82,7 @@ def beacon(config):
     '''
     '''
     _config = {}
-    map(_config.update, config)
+    list(map(_config.update, config))
 
     _get_notifier(_config)
 

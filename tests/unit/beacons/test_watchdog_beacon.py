@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import shutil
 import tempfile
+import time
 
 # Salt libs
 import salt.utils.files
@@ -38,3 +39,22 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         config = [{}]
         ret = watchdog.beacon(config)
         self.assertEqual(ret, [])
+
+    def test_file_create(self):
+        config = [{'files': {self.tmpdir: {'mask': ['create']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(ret, [])
+
+        path = os.path.join(self.tmpdir, 'tmpfile')
+        with salt.utils.files.fopen(path, 'w') as f:
+            pass
+
+        time.sleep(1)  # oups
+
+        ret = watchdog.beacon(config)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0]['path'], path)
+        self.assertEqual(ret[0]['change'], 'created')
