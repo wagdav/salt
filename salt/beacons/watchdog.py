@@ -58,7 +58,9 @@ def _get_notifier(config):
         __context__['watchdog.queue'] = collections.deque()
         event_handler = Handler(__context__['watchdog.queue'])
         observer = Observer()
-        observer.schedule(event_handler, os.path.dirname(path), recursive=True)
+        for path in config.get('files', {}):
+            observer.schedule(event_handler, os.path.dirname(path), recursive=True)
+
         observer.start()
         __context__['watchdog.observer'] = observer
     return __context__['watchdog.observer']
@@ -82,7 +84,10 @@ def to_salt_event(event):
 def beacon(config):
     '''
     '''
-    _get_notifier(config)
+    _config = {}
+    map(_config.update, config)
+
+    _get_notifier(_config)
 
     queue = __context__['watchdog.queue']
     log.debug("The queue contains: %s", queue)
@@ -96,4 +101,6 @@ def beacon(config):
 
 
 def close(config):
-    ''' close '''
+    if 'watchdog.observer' in __context__:
+        __context__['watchdog.observer'].stop()
+        del __context__['watchdog.observer']

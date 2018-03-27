@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 @skipIf(not watchdog.HAS_WATCHDOG, 'watchdog is not available')
-class INotifyBeaconTestCase(TestCase, LoaderModuleMockMixin):
+class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
     '''
     Test case for salt.beacons.watchdog
     '''
