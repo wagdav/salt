@@ -74,7 +74,6 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'created')
 
-
     def test_file_modified(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
 
