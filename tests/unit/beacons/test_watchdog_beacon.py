@@ -179,3 +179,9 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(ret[0]['change'], 'created')
         self.assertEqual(ret[1]['path'], self.tmpdir)
         self.assertEqual(ret[1]['change'], 'modified')
+
+    def DISABLED_test_config_uses_default_mask(self):
+        pass
+
+    def DISABLED_test_directory_is_moved_created_etc(self):
+        pass

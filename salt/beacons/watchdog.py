@@ -49,7 +49,7 @@ class Handler(FileSystemEventHandler):
 
         self._append_path_if_mask(event, event.src_path, mask)
 
-        if os.path.isfile(event.src_path):
+        if not event.is_directory:
             parent_dir = os.path.dirname(event.src_path)
             self._append_path_if_mask(event, parent_dir, mask)
 
@@ -120,8 +120,10 @@ def beacon(config):
 
     The mask list can contain the following events (the default mask is create,
     delete, and modify):
-    * create            - File created in watched directory
+    * create            - File or directory is created in watched directory
     * modify            - File modified
+    * delete            - File or directory is deleted from watched directory
+    * moved             - File or directory is moved or renamed
     '''
 
     _config = {}
