@@ -31,6 +31,12 @@ def check_events(config):
     return []
 
 
+def create(path, content=None):
+    with salt.utils.files.fopen(path, 'w') as f:
+        if content:
+            f.write(content)
+
+
 @skipIf(not watchdog.HAS_WATCHDOG, 'watchdog is not available')
 class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
     '''
@@ -61,8 +67,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
         self.assertEqual(watchdog.beacon(config), [])
 
-        with salt.utils.files.fopen(path, 'w') as f:
-            pass
+        create(path)
 
         ret = check_events(config)
         self.assertEqual(len(ret), 1)
@@ -79,8 +84,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
         self.assertEqual(watchdog.beacon(config), [])
 
-        with salt.utils.files.fopen(path, 'w') as f:
-            f.write('some content')
+        create(path, 'some content')
 
         ret = check_events(config)
         self.assertEqual(len(ret), 1)
@@ -125,8 +129,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
     def test_file_moved(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
-        with salt.utils.files.fopen(path, 'w'):
-            pass
+        create(path)
 
         config = [{'files': {path: {'mask': ['move']}}}]
         ret = watchdog.validate(config)
@@ -151,11 +154,8 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
         self.assertEqual(watchdog.beacon(config), [])
 
-        with salt.utils.files.fopen(file1, 'w') as f:
-            pass
-
-        with salt.utils.files.fopen(file2, 'w') as f:
-            pass
+        create(file1)
+        create(file2)
 
         ret = check_events(config)
         self.assertEqual(len(ret), 1)
@@ -170,8 +170,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(watchdog.beacon(config), [])
 
         path = os.path.join(self.tmpdir, 'tmpfile')
-        with salt.utils.files.fopen(path, 'w') as f:
-            pass
+        create(path)
 
         ret = check_events(config)
         self.assertEqual(len(ret), 2)
