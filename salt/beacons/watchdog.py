@@ -45,8 +45,17 @@ class Handler(FileSystemEventHandler):
         self._append_if_mask(event, 'move')
 
     def _append_if_mask(self, event, mask):
-        if event.src_path in self.config.get('files', {}):
-            if mask in self.config['files'][event.src_path].get('mask', []):
+        logging.debug(event)
+
+        self._append_path_if_mask(event, event.src_path, mask)
+
+        if os.path.isfile(event.src_path):
+            parent_dir = os.path.dirname(event.src_path)
+            self._append_path_if_mask(event, parent_dir, mask)
+
+    def _append_path_if_mask(self, event, path, mask):
+        if path in self.config.get('files', {}):
+            if mask in self.config['files'][path].get('mask', []):
                 self.queue.append(event)
 
 
