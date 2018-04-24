@@ -113,17 +113,10 @@ def beacon(config):
             - files:
                 /path/to/file/or/dir:
                   mask:
-                    - open
                     - create
-                    - close_write
-                  recurse: True
-                  auto_add: True
-                  exclude:
-                    - /path/to/file/or/dir/exclude1
-                    - /path/to/file/or/dir/exclude2
-                    - /path/to/file/or/dir/regex[a-m]*$:
-                        regex: True
-            - coalesce: True
+                    - modify
+                    - delete
+                    - move
 
     The mask list can contain the following events (the default mask is create,
     delete, and modify):
@@ -137,11 +130,9 @@ def beacon(config):
     _get_notifier(_config)
 
     queue = __context__['watchdog.queue']
-    log.debug("The queue contains: %s", queue)
 
     ret = []
     while len(queue):
-        log.debug("will send %s", queue[0])
         ret.append(to_salt_event(queue.popleft()))
 
     return ret

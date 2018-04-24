@@ -44,6 +44,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.tmpdir = tempfile.mkdtemp()
 
     def tearDown(self):
+        watchdog.close({})
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_empty_config(self):
@@ -85,6 +86,24 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'modified')
+
+    def test_file_no_modified_on_deletion(self):
+        path = os.path.join(self.tmpdir, 'tmpfile')
+
+        config = [{'files': {path: {'mask': ['modify']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        with salt.utils.files.fopen(path, 'w') as f:
+            pass
+
+        self.assertEqual(watchdog.beacon(config), [])
+
+        os.remove(path)
+
+        ret = check_events(config)
+
+        self.assertEqual(watchdog.beacon(config), [])
 
     def test_file_deleted(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
