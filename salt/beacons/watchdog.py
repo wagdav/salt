@@ -10,12 +10,7 @@ Watch files and translate the changes into salt events
 # Import Python libs
 from __future__ import absolute_import
 import collections
-import fnmatch
 import os
-import re
-
-# Import salt libs
-import salt.ext.six
 
 # Import third party libs
 try:
@@ -38,19 +33,15 @@ class Handler(FileSystemEventHandler):
         self.queue = queue
 
     def on_created(self, event):
-        log.debug("on_created_event received: %s", event)
         self._append_if_mask(event, 'create')
 
     def on_modified(self, event):
-        log.debug("on_modified_event received: %s", event)
         self._append_if_mask(event, 'modify')
 
     def on_deleted(self, event):
-        log.debug("on_deleted_event received: %s", event)
         self._append_if_mask(event, 'delete')
 
     def on_moved(self, event):
-        log.debug("on_moved_event received: %s", event)
         self._append_if_mask(event, 'move')
 
     def _append_if_mask(self, event, mask):

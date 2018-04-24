@@ -16,6 +16,21 @@ from tests.support.unit import skipIf, TestCase
 from tests.support.mixins import LoaderModuleMockMixin
 
 
+def check_events(config):
+    total_delay = 1
+    delay_per_loop = 20e-3
+
+    for _ in range(int(total_delay / delay_per_loop)):
+        events = watchdog.beacon(config)
+
+        if events:
+            return events
+
+        time.sleep(delay_per_loop)
+
+    return []
+
+
 @skipIf(not watchdog.HAS_WATCHDOG, 'watchdog is not available')
 class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
     '''
@@ -48,9 +63,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         with salt.utils.files.fopen(path, 'w') as f:
             pass
 
-        time.sleep(1)  # oups
-
-        ret = watchdog.beacon(config)
+        ret = check_events(config)
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'created')
@@ -68,9 +81,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         with salt.utils.files.fopen(path, 'w') as f:
             f.write('some content')
 
-        time.sleep(1)  # oups
-
-        ret = watchdog.beacon(config)
+        ret = check_events(config)
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'modified')
@@ -88,9 +99,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
         os.remove(path)
 
-        time.sleep(1)  # oups
-
-        ret = watchdog.beacon(config)
+        ret = check_events(config)
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'deleted')
@@ -108,9 +117,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
         os.rename(path, path + '_moved')
 
-        time.sleep(1)  # oups
-
-        ret = watchdog.beacon(config)
+        ret = check_events(config)
         self.assertEqual(len(ret), 1)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'moved')
@@ -126,9 +133,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         with salt.utils.files.fopen(path, 'w') as f:
             pass
 
-        time.sleep(1)  # oups
-
-        ret = watchdog.beacon(config)
+        ret = check_events(config)
         self.assertEqual(len(ret), 2)
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'created')
