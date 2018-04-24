@@ -122,7 +122,28 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(ret[0]['path'], path)
         self.assertEqual(ret[0]['change'], 'moved')
 
-    def DISABLED_test_file_create_in_directory(self):
+    def test_only_monitors_interesting_files(self):
+        file1 = os.path.join(self.tmpdir, 'file1')
+        file2 = os.path.join(self.tmpdir, 'file2')
+
+        config = [{'files': {file1: {'mask': ['create']}}}]
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
+        self.assertEqual(watchdog.beacon(config), [])
+
+        with salt.utils.files.fopen(file1, 'w') as f:
+            pass
+
+        with salt.utils.files.fopen(file2, 'w') as f:
+            pass
+
+        ret = check_events(config)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0]['path'], file1)
+        self.assertEqual(ret[0]['change'], 'created')
+
+    def test_file_create_in_directory(self):
         config = [{'files': {self.tmpdir: {'mask': ['create', 'modify']}}}]
         ret = watchdog.validate(config)
         self.assertEqual(ret, (True, 'Valid beacon configuration'))
