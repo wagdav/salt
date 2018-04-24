@@ -53,6 +53,10 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         watchdog.close({})
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
+    def assertValid(self, config):
+        ret = watchdog.validate(config)
+        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+
     def test_empty_config(self):
         config = [{}]
         ret = watchdog.beacon(config)
@@ -62,9 +66,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         path = os.path.join(self.tmpdir, 'tmpfile')
 
         config = [{'files': {path: {'mask': ['create']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         create(path)
@@ -78,9 +80,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         path = os.path.join(self.tmpdir, 'tmpfile')
 
         config = [{'files': {path: {'mask': ['modify']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         create(path, 'some content')
@@ -94,8 +94,8 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         path = os.path.join(self.tmpdir, 'tmpfile')
 
         config = [{'files': {path: {'mask': ['modify']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
+        self.assertValid(config)
+        self.assertEqual(watchdog.beacon(config), [])
 
         create(path)
         self.assertEqual(watchdog.beacon(config), [])
@@ -110,9 +110,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         create(path)
 
         config = [{'files': {path: {'mask': ['delete']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         os.remove(path)
@@ -127,9 +125,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         create(path)
 
         config = [{'files': {path: {'mask': ['move']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         os.rename(path, path + '_moved')
@@ -144,9 +140,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         file2 = os.path.join(self.tmpdir, 'file2')
 
         config = [{'files': {file1: {'mask': ['create']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         create(file1)
@@ -159,9 +153,7 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
     def test_file_create_in_directory(self):
         config = [{'files': {self.tmpdir: {'mask': ['create', 'modify']}}}]
-        ret = watchdog.validate(config)
-        self.assertEqual(ret, (True, 'Valid beacon configuration'))
-
+        self.assertValid(config)
         self.assertEqual(watchdog.beacon(config), [])
 
         path = os.path.join(self.tmpdir, 'tmpfile')
@@ -174,8 +166,24 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         self.assertEqual(ret[1]['path'], self.tmpdir)
         self.assertEqual(ret[1]['change'], 'modified')
 
-    def DISABLED_test_config_uses_default_mask(self):
-        pass
+    def test_config_uses_default_mask(self):
+        path = os.path.join(self.tmpdir, 'tmpfile')
+        moved = path + '_moved'
+
+        config = [{'files': {
+            path: {},
+            moved: {},
+        }}]
+        self.assertValid(config)
+        self.assertEqual(watchdog.beacon(config), [])
+
+        create(path)
+        create(path, 'modified content')
+        os.rename(path, moved)
+        os.remove(moved)
+
+        ret = check_events(config)
+        self.assertEqual(len(ret), 4)
 
     def DISABLED_test_directory_is_moved_created_etc(self):
         pass

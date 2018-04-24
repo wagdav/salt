@@ -25,6 +25,13 @@ __virtualname__ = 'watchdog'
 import logging
 log = logging.getLogger(__name__)
 
+DEFAULT_MASK = [
+    'create',
+    'delete',
+    'modify',
+    'move',
+]
+
 
 class Handler(FileSystemEventHandler):
     def __init__(self, config, queue):
@@ -55,7 +62,7 @@ class Handler(FileSystemEventHandler):
 
     def _append_path_if_mask(self, event, path, mask):
         if path in self.config.get('files', {}):
-            if mask in self.config['files'][path].get('mask', []):
+            if mask in self.config['files'][path].get('mask', DEFAULT_MASK):
                 self.queue.append(event)
 
 
