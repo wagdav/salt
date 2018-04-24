@@ -98,21 +98,17 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
         ret = watchdog.validate(config)
         self.assertEqual(ret, (True, 'Valid beacon configuration'))
 
-        with salt.utils.files.fopen(path, 'w') as f:
-            pass
-
+        create(path)
         self.assertEqual(watchdog.beacon(config), [])
 
         os.remove(path)
 
         ret = check_events(config)
-
         self.assertEqual(watchdog.beacon(config), [])
 
     def test_file_deleted(self):
         path = os.path.join(self.tmpdir, 'tmpfile')
-        with salt.utils.files.fopen(path, 'w'):
-            pass
+        create(path)
 
         config = [{'files': {path: {'mask': ['delete']}}}]
         ret = watchdog.validate(config)
