@@ -20,6 +20,9 @@ try:
 except ImportError:
     HAS_WATCHDOG = False
 
+    class FileSystemEventHandler:
+        """ A dummy class to make the import work """
+
 __virtualname__ = 'watchdog'
 
 import logging
