@@ -187,3 +187,11 @@ class IWatchdogBeaconTestCase(TestCase, LoaderModuleMockMixin):
 
     def DISABLED_test_directory_is_moved_created_etc(self):
         pass
+
+    def DISABLED_test_a_file_moved_outside_watched_space_is_reported_as_deleted(self):
+        pass
+
+    def DISABLED_test_mask_is_recursive(self):
+        pass
+
+    # and all the other tests for recursive behavior ...

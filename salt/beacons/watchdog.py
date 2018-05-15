@@ -127,13 +127,20 @@ def beacon(config):
                     - modify
                     - delete
                     - move
+                  recurse: False
 
     The mask list can contain the following events (the default mask is create,
-    delete, and modify):
-    * create            - File or directory is created in watched directory
-    * modify            - File modified
-    * delete            - File or directory is deleted from watched directory
-    * moved             - File or directory is moved or renamed
+    delete, modify and move):
+
+    * create    - File or directory is created in watched directory
+    * modify    - File modified
+    * delete    - File or directory is deleted from watched directory
+    * move      - File or directory is moved or renamed
+
+    Note that a file moved outside a watched directory is reported as deleted.
+
+    recurse:
+      Recursively watch files in the directory (default: False)
     '''
 
     _config = {}
